@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis Vocal - Laura Fabricio</title>
+    <link rel="stylesheet" href="css/visor.css">
+</head>
+
+<body>
+    <!-- Overlay Badges (Phase 1) -->
+    <div id="suspiciousBadge"></div>
+    <div id="contradictionBadge"></div>
+    <div id="micropauseBadge"></div>
+    <div id="timeDisplay"></div>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🎯 Análisis Vocal Forense - Laura Fabricio</h1>
+            <p>Arquitectura basada en componentes | Cada indicador es independiente</p>
+        </div>
+
+        <div class="dashboard-layout">
+            <!-- 🟢 COLUMNA IZQUIERDA: Video y Visualización -->
+            <main class="main-content">
+                <!-- Video with Overlay Indicators -->
+                <div class="video-overlay-wrapper">
+                    <video id="mainVideo" controls>
+                        <source
+                            src="https://res.cloudinary.com/dqeqpzghy/video/upload/v1769561917/Laura_Fabricio_ed1vn2.mp4"
+                            type="video/mp4">
+                        Tu navegador no soporta video HTML5.
+                    </video>
+
+                    <!-- Overlay Indicators -->
+                    <div class="overlay-indicators">
+                        <div id="stressIndicator"></div>
+                        <div id="emotionIndicator"></div>
+                        <div id="hnrIndicator"></div>
+                        <div id="speakerIndicator"></div>
+                    </div>
+                </div>
+
+                <!-- Timeline -->
+                <div id="timeline" style="margin-bottom: 20px;"></div>
+
+                <!-- Charts -->
+                <div id="stressChart" style="margin-bottom: 20px;"></div>
+                <div id="jitterShimmer" style="margin-bottom: 20px;"></div>
+                <div id="stressTrend" style="margin-bottom: 20px;"></div>
+
+                <!-- Overlays Ocultos (Logic only or Absolute) -->
+                <div id="redFlag"></div>
+                <div id="patternBadge"></div>
+
+                <!-- Controles -->
+                <div class="controls" style="margin-top: 30px;">
+                    <h3 style="margin-bottom: 15px; color: #94a3b8;">Controles</h3>
+                    <label for="jsonFile" class="file-input-label">📂 Cargar VISOR.json</label>
+                    <input type="file" id="jsonFile" accept=".json">
+
+                    <label for="mediaFile" class="file-input-label" style="margin-left: 10px;">🎬 Cargar
+                        Video/Audio</label>
+                    <input type="file" id="mediaFile" accept="video/*,audio/*">
+
+                    <button class="button" id="testButton">🧪 Test Data</button>
+                    <button class="button" id="toggleDebug">🐛 Debug</button>
+                    <div id="status" class="status">Esperando datos...</div>
+                </div>
+
+                <!-- Debug Console -->
+                <div id="debugConsole" class="debug-console"></div>
+            </main>
+
+            <!-- 🔵 COLUMNA DERECHA: Análisis y Paneles -->
+            <aside class="sidebar-panel">
+                <!-- 0. Impacto Psicológico (NUEVO) -->
+                <div id="psychologicalImpact"></div>
+
+                <!-- 1. Navegación Rápida -->
+                <div id="keyMoments"></div>
+
+                <!-- 2. Síntesis Ejecutiva -->
+                <div id="sintesisPanel"></div>
+
+                <!-- 3. Veredicto -->
+                <div id="veredictoPanel"></div>
+
+                <!-- 4. Alertas y Momentos -->
+                <div id="momentosSospechosos"></div>
+                <div id="alertasIndex"></div>
+
+                <!-- 5. Detalles Técnicos -->
+                <div id="contradicciones"></div>
+                <div id="microPausas"></div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- Components -->
+    <script src="js/components/BaseIndicator.js"></script>
+    <script src="js/components/StressIndicator.js"></script>
+    <script src="js/components/EmotionIndicator.js"></script>
+    <script src="js/components/HNRIndicator.js"></script>
+    <script src="js/components/TimelineComponent.js"></script>
+    <script src="js/components/RedFlagComponent.js"></script>
+    <script src="js/components/PatternBadgeComponent.js"></script>
+    <script src="js/components/StressChartComponent.js"></script>
+    <script src="js/components/VeredictoPanelComponent.js"></script>
+    <script src="js/components/ContradiccionesComponent.js"></script>
+    <script src="js/components/MicroPausasIndicator.js"></script>
+    <script src="js/components/JitterShimmerChartComponent.js"></script>
+
+    <!-- Phase 1 Overlay Badges -->
+    <script src="js/components/SuspiciousBadgeComponent.js"></script>
+    <script src="js/components/ContradictionBadgeComponent.js"></script>
+    <script src="js/components/MicropauseBadgeComponent.js"></script>
+    <script src="js/components/TimeDisplayComponent.js"></script>
+
+    <!-- Phase 2 Functional Panels -->
+    <script src="js/components/SpeakerIndicatorComponent.js"></script>
+    <script src="js/components/SpeakerIndicatorComponent.js"></script>
+    <script src="js/components/SintesisPanelComponent.js"></script>
+    <script src="js/components/MomentosSospechososPanelComponent.js"></script>
+    <script src="js/components/AlertasIndexComponent.js"></script>
+    <script src="js/components/KeyMomentsComponent.js"></script>
+    <script src="js/components/PsychologicalImpactComponent.js"></script>
+    <script src="js/components/TimelineVisualizationComponent.js"></script>
+
+    <!-- Main App -->
+    <script>
+        // Indicadores globales
+        let stressIndicator;
+        let emotionIndicator;
+        let hnrIndicator;
+        let timeline;
+        let redFlag;
+        let patternBadge;
+        let stressChart;
+        let veredictoPanel;
+        let contradicciones;
+        let microPausas;
+        let jitterShimmerChart;
+
+        // Phase 1 Overlay Badges
+        let suspiciousBadge;
+        let contradictionBadge;
+        let micropauseBadge;
+        let timeDisplay;
+
+        // Phase 2 Functional Panels
+        let speakerIndicator;
+        let sintesisPanel;
+        let momentosSospechosos;
+        let alertasIndex;
+        let keyMoments;
+        let timelineVisual; // Nuevo componente visual
+
+        // Data actual
+        let visorData = null;
+        let currentIndex = 0;
+        let intervalId = null;
+
+        // Inicializar app
+        function init() {
+            console.log('🚀 Inicializando Visor Modular...');
+
+            // Crear indicadores
+            stressIndicator = new StressIndicator('stressIndicator');
+            emotionIndicator = new EmotionIndicator('emotionIndicator');
+            hnrIndicator = new HNRIndicator('hnrIndicator');
+            timeline = new TimelineComponent('timeline');
+            redFlag = new RedFlagComponent('redFlag');
+            patternBadge = new PatternBadgeComponent('patternBadge');
+            stressChart = new StressChartComponent('stressChart');
+            veredictoPanel = new VeredictoPanelComponent('veredictoPanel');
+            contradicciones = new ContradiccionesComponent('contradicciones');
+            microPausas = new MicroPausasIndicator('microPausas');
+            jitterShimmerChart = new JitterShimmerChartComponent('jitterShimmer');
+
+            // Phase 1 Overlay Badges
+            suspiciousBadge = new SuspiciousBadgeComponent('suspiciousBadge');
+            contradictionBadge = new ContradictionBadgeComponent('contradictionBadge');
+            micropauseBadge = new MicropauseBadgeComponent('micropauseBadge');
+            timeDisplay = new TimeDisplayComponent('timeDisplay');
+
+            // Phase 2 Functional Panels
+            speakerIndicator = new SpeakerIndicatorComponent('speakerIndicator');
+            sintesisPanel = new SintesisPanelComponent('sintesisPanel');
+            momentosSospechosos = new MomentosSospechososPanelComponent('momentosSospechosos');
+            alertasIndex = new AlertasIndexComponent('alertasIndex');
+
+            // Nuevo componente keyMoments (siempre inicializar con try-catch implícito)
+            try {
+                keyMoments = new KeyMomentsComponent('keyMoments');
+                window.keyMoments = keyMoments;
+
+                // Nuevo Panel Psicológico
+                const psychologicalImpact = new PsychologicalImpactComponent('psychologicalImpact');
+                window.psychologicalImpact = psychologicalImpact;
+
+                // Nuevo Timeline Visual
+                timelineVisual = new TimelineVisualizationComponent('timeline');
+                window.timelineVisual = timelineVisual;
+            } catch (e) { console.error('Error init KeyMoments/Timeline', e); }
+
+            // Cargar video por defecto
+            // videoPlayer.loadVideo(...) // YA NO EXISTE componente, es video HTML5 directo
+
+            // INTENTO FORZADO ELIMINADO: Esperar a carga de JSON
+            console.log('✅ Visor listo. Cargando indicadores vacíos...');
+
+            console.log('✅ Indicadores y componentes creados (incluye 4 overlay badges + 4 paneles funcionales)');
+
+            // Event listeners
+            document.getElementById('jsonFile').addEventListener('change', loadJSONFile);
+            document.getElementById('mediaFile').addEventListener('change', loadMediaFile);
+            document.getElementById('testButton').addEventListener('click', testWithSampleData);
+            document.getElementById('toggleDebug').addEventListener('click', toggleDebugConsole);
+
+            // Paso 2: Conectar video con indicadores
+            const video = document.getElementById('mainVideo');
+            if (video) {
+                video.addEventListener('timeupdate', function () {
+                    syncWithVideo(video.currentTime);
+                });
+                console.log('🎬 Video conectado para sincronización');
+            }
+
+            showStatus('✅ Visor inicializado. Cargando datos automáticamente...');
+
+            // AUTO-LOAD: Cargar data.json embebido
+            fetch('data.json')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('✅ Datos cargados automáticamente');
+                    visorData = data;
+                    loadVisorData(data);
+                })
+                .catch(err => {
+                    console.log('ℹ️ No hay data.json embebido, esperando carga manual');
+                    showStatus('✅ Visor listo. Carga un VISOR.json o reproduce el video.');
+                });
+        }
+
+        // Función para cargar datos del visor
+        function loadVisorData(data) {
+            visorData = data;
+            const dataPoints = data.data_points_granulares || [];
+            if (dataPoints.length === 0) return;
+
+            showStatus(`✅ Cargado: ${dataPoints.length} puntos de datos`);
+
+            // Cargar Timeline Visual
+            const totalDuration = data.metadata?.duracion_total_s || 0;
+            if (window.timelineVisual) {
+                window.timelineVisual.loadData(data.timeline, totalDuration);
+            }
+
+            // Cargar momentos críticos
+            if (data.momentos_criticos) {
+                const processedMoments = data.momentos_criticos.map(m => {
+                    if (m.segundos_inicio !== undefined) return m;
+                    let start = 0, end = 0;
+                    if (typeof m.timestamp === 'string' && m.timestamp.includes('-')) {
+                        const parts = m.timestamp.split('-');
+                        start = parseTimeToSeconds(parts[0].trim());
+                        end = parseTimeToSeconds(parts[1].trim());
+                    }
+                    return { ...m, segundos_inicio: start, segundos_fin: end };
+                });
+                redFlag.loadCriticalMoments(processedMoments);
+
+                if (window.keyMoments) {
+                    const technicalMoments = data.momentos_criticos
+                        .filter(m => m.tipo_indicador !== 'PATRON_PSICOLOGICO')
+                        .map(m => ({
+                            tiempo: m.timestamp,
+                            descripcion: m.analisis_integrado || m.que_dijo || "Análisis no disponible"
+                        }));
+                    window.keyMoments.loadMoments(technicalMoments);
+                }
+            }
+
+            // Cargar charts
+            stressChart.loadData(dataPoints, data.momentos_criticos || []);
+            jitterShimmerChart.loadData(dataPoints, data.momentos_criticos || []);
+
+            // Cargar veredicto
+            if (data.veredicto_final) {
+                patternBadge.loadVeredicto(data.veredicto_final);
+                veredictoPanel.loadVeredicto(data.veredicto_final, data.conclusion_profesional);
+            }
+
+            // Cargar contradicciones
+            contradicciones.loadContradicciones(data.contradicciones_detectadas);
+
+            showStatus('✅ Datos cargados. Reproduce el video.');
+        }
+
+        // Cargar archivo de video/audio
+        function loadMediaFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            showStatus(`🎬 Cargando ${file.name}...`);
+
+            const video = document.getElementById('mainVideo');
+            if (video) {
+                const url = URL.createObjectURL(file);
+                video.src = url;
+                video.load();
+                showStatus(`✅ Media cargado: ${file.name}`);
+                console.log(`🎬 Media cargado: ${file.name}`);
+            } else {
+                showStatus('❌ Error: Elemento de video no encontrado');
+            }
+        }
+
+        // Cargar archivo JSON
+        function loadJSONFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            showStatus(`📂 Cargando ${file.name}...`);
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    visorData = JSON.parse(e.target.result);
+                    console.log('✅ JSON cargado:', visorData);
+
+                    // VISOR.json tiene data_points_granulares (español)
+                    const dataPoints = visorData.data_points_granulares || visorData.granular_data || visorData.data_points || [];
+
+                    if (dataPoints.length === 0) {
+                        throw new Error('No se encontraron datos en el JSON');
+                    }
+
+                    showStatus(`✅ Cargado: ${dataPoints.length} puntos de datos`);
+
+                    // Cargar Timeline Visual
+                    // Necesitamos la duración total. Si video está cargado, usar video.duration
+                    // Si no, intentar sacarlo del JSON metadata
+                    const totalDuration = visorData.metadata?.duracion_total_s || 0;
+
+                    if (window.timelineVisual) {
+                        window.timelineVisual.loadData(visorData.timeline, totalDuration);
+                    }
+
+                    // Phase 4: Cargar timeline para subtítulos (Overlay antiguo)
+                    if (visorData.timeline && window.subtitleOverlay) {
+                        timeline.loadSegments(visorData.timeline);
+                    }
+
+                    // Cargar momentos críticos (RedFlag Overlay)
+                    // Cargar momentos críticos (RedFlag Overlay)
+                    if (visorData.momentos_criticos) {
+                        // Pre-procesar para asegurar que tengan segundos numéricos
+                        const processedMoments = visorData.momentos_criticos.map(m => {
+                            // Si ya tiene segundos, usarlos
+                            if (m.segundos_inicio !== undefined) return m;
+
+                            // Si no, intentar parsear del timestamp "2:58 - 3:47"
+                            let start = 0, end = 0;
+                            if (typeof m.timestamp === 'string' && m.timestamp.includes('-')) {
+                                const parts = m.timestamp.split('-');
+                                start = parseTimeToSeconds(parts[0].trim());
+                                end = parseTimeToSeconds(parts[1].trim());
+                            }
+                            return { ...m, segundos_inicio: start, segundos_fin: end };
+                        });
+
+                        redFlag.loadCriticalMoments(processedMoments);
+
+                        // ---- SEPARACIÓN DE PANELES ----
+
+                        // 1. Filtrar Patrones Psicológicos
+                        const psychPatterns = visorData.momentos_criticos
+                            .filter(m => m.tipo_indicador === 'PATRON_PSICOLOGICO')
+                            .map(m => ({
+                                timestamp: m.timestamp,
+                                descripcion: m.analisis_integrado || m.que_dijo,
+                                analisis_integrado: m.analisis_integrado // asegurar campo para el componente
+                            }));
+
+                        if (window.psychologicalImpact && psychPatterns.length > 0) {
+                            window.psychologicalImpact.loadPatterns(psychPatterns);
+                        }
+
+                        // 2. Filtrar Momentos Técnicos (excluir psicológicos)
+                        // TAMBIÉN cargar en el panel "Momentos Clave" (con descripciones técnicas Y FORMATO)
+                        if (window.keyMoments) {
+                            const technicalMoments = visorData.momentos_criticos
+                                .filter(m => m.tipo_indicador !== 'PATRON_PSICOLOGICO') // EXCLUIR PSICOLÓGICOS
+                                .map(m => {
+                                    let desc = m.analisis_integrado || m.que_dijo || "Análisis no disponible";
+
+                                    // Formateo automático: Agregar iconos y negritas según contenido
+                                    if (desc.includes('inestable')) desc = "⚠️ <b>Voz inestable</b> " + desc.replace('voz inestable', '');
+                                    else if (desc.includes('temblor')) desc = "⚠️ <b>Temblor en la voz</b> " + desc.replace('temblor en la voz', '');
+                                    else if (desc.includes('tensa')) desc = "🚨 <b>Estrés cognitivo:</b> " + desc;
+                                    else if (m.nivel_importancia === 'ALTO') desc = "🚨 " + desc;
+                                    else desc = "ℹ️ " + desc;
+
+                                    return {
+                                        tiempo: m.timestamp, // Mantener rango "2:58 - 3:47"
+                                        descripcion: desc
+                                    };
+                                });
+                            window.keyMoments.loadMoments(technicalMoments);
+                        }
+                    } else if (window.keyMoments) {
+                        // Limpiar si no hay datos
+                        window.keyMoments.loadMoments([]);
+                        if (window.psychologicalImpact) window.psychologicalImpact.loadPatterns([]);
+                    }
+
+                    // Cargar veredicto para pattern badge
+                    if (visorData.veredicto_final) {
+                        patternBadge.loadVeredicto(visorData.veredicto_final);
+                        // Mostrar pattern badge después de 2 segundos
+                        setTimeout(() => patternBadge.show(), 2000);
+                    }
+
+                    // Cargar datos para stress chart
+                    if (dataPoints.length > 0) {
+                        stressChart.loadData(dataPoints, visorData.momentos_criticos || []);
+                    }
+
+                    // Cargar veredicto panel
+                    if (visorData.veredicto_final) {
+                        veredictoPanel.loadVeredicto(
+                            visorData.veredicto_final,
+                            visorData.conclusion_profesional
+                        );
+                    }
+
+                    // Cargar contradicciones
+                    contradicciones.loadContradicciones(visorData.contradicciones_detectadas);
+
+                    // Cargar micro-pausas
+                    microPausas.loadMicroPausas(visorData.micro_pausas, visorData.timeline);
+
+                    // Cargar jitter/shimmer chart (con shimmer estimado más bajo)
+                    const dataWithShimmer = dataPoints.map(p => ({
+                        ...p,
+                        shimmer: p.p * 1.5 // Estimación ajustada: shimmer ~ jitter × 1.5
+                    }));
+                    jitterShimmerChart.loadData(dataWithShimmer, visorData.momentos_criticos || []);
+
+                    // Cargar indicadores superiores desde metadata
+                    const metadata = visorData.metadata || {};
+
+                    // Actualizar indicadores con valores agregados
+                    if (metadata.estres_promedio !== undefined) {
+                        stressIndicator.update({
+                            stress: metadata.estres_promedio
+                        });
+                    }
+
+                    if (metadata.estado_emocional !== undefined) {
+                        // Mapear estado emocional a valor numérico
+                        const emotionValue = metadata.estado_emocional.includes('tensión') ? 1 : 0;
+                        emotionIndicator.update({
+                            emotion: emotionValue
+                        });
+                    }
+
+                    if (metadata.hnr_promedio_db !== undefined) {
+                        hnrIndicator.update({
+                            hnr: metadata.hnr_promedio_db
+                        });
+                    }
+
+                    // NO iniciar simulación automática - ahora sincroniza con video
+                    showStatus('✅ JSON cargado. Reproduce el video para ver los indicadores.');
+                } catch (error) {
+                    console.error('❌ Error al parsear JSON:', error);
+                    showStatus(`❌ Error: ${error.message}`);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Probar con datos de muestra
+        function testWithSampleData() {
+            console.log('🧪 Generando datos de prueba...');
+
+            // Datos de prueba
+            const testData = {
+                stress: 0.65,
+                emotion: 1,
+                hnr: 12.5
+            };
+
+            // Actualizar indicadores
+            stressIndicator.update(testData);
+            emotionIndicator.update(testData);
+            hnrIndicator.update(testData);
+
+            showStatus(`✅ Datos de prueba aplicados: Estrés ${testData.stress}, Emoción ${testData.emotion}, HNR ${testData.hnr} dB`);
+        }
+
+        // Paso 2: Sincronizar indicadores con el tiempo del video
+        function syncWithVideo(currentTime) {
+            if (!visorData) return;
+
+            const dataPoints = visorData.data_points_granulares || visorData.granular_data || visorData.data_points || [];
+            if (dataPoints.length === 0) return;
+
+            // Buscar el punto de datos más cercano al tiempo actual
+            let closestPoint = dataPoints[0];
+            for (let i = 0; i < dataPoints.length; i++) {
+                if (dataPoints[i].t <= currentTime) {
+                    closestPoint = dataPoints[i];
+                } else {
+                    break;
+                }
+            }
+
+            // Actualizar indicadores principales
+            stressIndicator.update({ stress: closestPoint.e || 0 });
+            emotionIndicator.update({ emotion: closestPoint.em || 0 });
+            hnrIndicator.update({ hnr: closestPoint.hnr || 0 });
+
+            // Actualizar time display
+            timeDisplay.update({ time: currentTime });
+
+            // Actualizar timeline
+            timeline.update({ currentTime: currentTime });
+
+            // Actualizar red flags
+            redFlag.update({ currentTime: currentTime });
+
+            // Actualizar stress chart
+            stressChart.update({ currentTime: currentTime });
+
+            // Actualizar badges
+            // Actualizar key moments (defensivo)
+            if (window.keyMoments && typeof window.keyMoments.update === 'function') {
+                window.keyMoments.update({ currentTime: currentTime });
+            }
+
+            // Actualizar timeline visual (cabezal)
+            if (window.timelineVisual) {
+                window.timelineVisual.update({ currentTime: currentTime });
+            }
+        }
+
+        // Iniciar simulación
+        function startSimulation() {
+            // Obtener datos granulares (español)
+            const dataPoints = visorData.data_points_granulares || visorData.granular_data || visorData.data_points || [];
+
+            if (dataPoints.length === 0) {
+                console.error('❌ No hay datos para simular');
+                showStatus('❌ No hay datos en el JSON');
+                return;
+            }
+
+            // Detener simulación previa
+            if (intervalId) {
+                clearInterval(intervalId);
+            }
+
+            currentIndex = 0;
+
+            // Simular cada 500ms
+            intervalId = setInterval(() => {
+                if (currentIndex >= dataPoints.length) {
+                    clearInterval(intervalId);
+                    showStatus('✅ Simulación completada');
+                    return;
+                }
+
+                const point = dataPoints[currentIndex];
+
+                // Actualizar indicadores
+                stressIndicator.update({
+                    stress: point.e || 0
+                });
+
+                emotionIndicator.update({
+                    emotion: point.em || 0
+                });
+
+                hnrIndicator.update({
+                    hnr: point.hnr || 0
+                });
+
+                // Actualizar time display (Phase 1)
+                timeDisplay.update({ time: point.t });
+
+                // Check for Phase 1 overlay badges
+                checkSuspiciousMoment(point.t);
+                checkContradictions(point.t);
+                checkMicroPause(point.t);
+
+                // Actualizar timeline antiguo (si existiera)
+                if (timeline && typeof timeline.update === 'function') {
+                    timeline.update({ currentTime: point.t });
+                }
+
+                // Actualizar timeline visual simulado
+                if (window.timelineVisual) {
+                    window.timelineVisual.update({ currentTime: point.t });
+                }
+
+                // Actualizar red flags
+                redFlag.update({
+                    currentTime: point.t
+                });
+
+                // Actualizar stress chart
+                stressChart.update({
+                    currentTime: point.t
+                });
+
+                showStatus(`▶️ Reproduciendo: ${currentIndex + 1}/${dataPoints.length} (${point.t.toFixed(1)}s)`);
+
+                currentIndex++;
+            }, 500);
+        }
+
+        // Mostrar status
+        function showStatus(message) {
+            document.getElementById('status').textContent = message;
+        }
+
+        // Toggle debug console
+        function toggleDebugConsole() {
+            const console = document.getElementById('debugConsole');
+            console.classList.toggle('active');
+        }
+
+        // Interceptar console.log para debug
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+
+        function addToDebug(message, type = 'info') {
+            const debugConsole = document.getElementById('debugConsole');
+            const line = document.createElement('div');
+            line.className = `debug-line ${type}`;
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            debugConsole.appendChild(line);
+            debugConsole.scrollTop = debugConsole.scrollHeight;
+        }
+
+        console.log = function (...args) {
+            originalLog(...args);
+            addToDebug(args.join(' '), 'info');
+        };
+
+        console.error = function (...args) {
+            originalError(...args);
+            addToDebug(args.join(' '), 'error');
+        };
+
+        console.warn = function (...args) {
+            originalWarn(...args);
+            addToDebug(args.join(' '), 'warn');
+        };
+
+        // Iniciar al cargar página
+
+        // Phase 1 Badge Detection Functions
+        function checkSuspiciousMoment(currentTime) {
+            if (!visorData || !visorData.momentos_criticos) return suspiciousBadge.hide();
+            const suspicious = visorData.momentos_criticos.filter(m => m.importancia === "MEDIA" && currentTime >= m.segundos_inicio && currentTime <= m.segundos_fin);
+            suspicious.length > 0 ? suspiciousBadge.show(suspicious[0]) : suspiciousBadge.hide();
+        }
+
+        function checkContradictions(currentTime) {
+            if (!visorData || !visorData.contradicciones_detectadas) return contradictionBadge.hide();
+            const active = visorData.contradicciones_detectadas.filter(c => { const t1 = parseTimeToSeconds(c.timestamp_1 || c.tiempo_1 || 0); return currentTime >= t1 && currentTime <= (t1 + 5); });
+            active.length > 0 ? contradictionBadge.show(active[0]) : contradictionBadge.hide();
+        }
+
+        function checkMicroPause(currentTime) {
+            if (!visorData || !visorData.micro_pausas || !visorData.micro_pausas.pausas_sospechosas) return micropauseBadge.hide();
+            const active = visorData.micro_pausas.pausas_sospechosas.filter(p => Math.abs(currentTime - p.inicio_s) < 0.5);
+            active.length > 0 ? micropauseBadge.show(active[0], visorData.timeline) : micropauseBadge.hide();
+        }
+
+        function parseTimeToSeconds(timeStr) {
+            if (typeof timeStr === "number") return timeStr;
+            if (!timeStr) return 0;
+            if (typeof timeStr === "string" && timeStr.includes(":")) {
+                const [min, sec] = timeStr.split(":").map(Number);
+                return min * 60 + sec;
+            }
+            return parseFloat(timeStr) || 0;
+        }
+
+
+        // Phase 1 Badge Detection Functions (con persistencia)
+        let suspiciousBadgeTimeout = null;
+        let contradictionBadgeTimeout = null;
+        let micropauseBadgeTimeout = null;
+
+        function checkSuspiciousMoment(currentTime) {
+            if (!visorData || !visorData.momentos_criticos) return;
+            const suspicious = visorData.momentos_criticos.filter(m =>
+                m.importancia === 'MEDIA' && currentTime >= m.segundos_inicio && currentTime <= m.segundos_fin);
+
+            if (suspicious.length > 0) {
+                suspiciousBadge.show(suspicious[0]);
+                // Cancelar timeout anterior
+                if (suspiciousBadgeTimeout) clearTimeout(suspiciousBadgeTimeout);
+                // Mantener visible por 3 segundos después del último show
+                suspiciousBadgeTimeout = setTimeout(() => suspiciousBadge.hide(), 3000);
+            }
+        }
+
+        function checkContradictions(currentTime) {
+            if (!visorData || !visorData.contradicciones_detectadas) return;
+            const active = visorData.contradicciones_detectadas.filter(c => {
+                const t1 = parseTimeToSeconds(c.timestamp_1 || c.tiempo_1 || 0);
+                return currentTime >= t1 && currentTime <= (t1 + 5);
+            });
+
+            if (active.length > 0) {
+                contradictionBadge.show(active[0]);
+                if (contradictionBadgeTimeout) clearTimeout(contradictionBadgeTimeout);
+                contradictionBadgeTimeout = setTimeout(() => contradictionBadge.hide(), 3000);
+            }
+        }
+
+        function checkMicroPause(currentTime) {
+            if (!visorData || !visorData.micro_pausas || !visorData.micro_pausas.pausas_sospechosas) return;
+            const active = visorData.micro_pausas.pausas_sospechosas.filter(p => Math.abs(currentTime - p.inicio_s) < 0.5);
+
+            if (active.length > 0) {
+                micropauseBadge.show(active[0], visorData.timeline);
+                if (micropauseBadgeTimeout) clearTimeout(micropauseBadgeTimeout);
+                micropauseBadgeTimeout = setTimeout(() => micropauseBadge.hide(), 3000);
+            }
+        }
+
+        function parseTimeToSeconds(timeStr) {
+            if (typeof timeStr === 'number') return timeStr;
+            if (!timeStr) return 0;
+            if (typeof timeStr === 'string' && timeStr.includes(':')) {
+                const [min, sec] = timeStr.split(':').map(Number);
+                return min * 60 + sec;
+            }
+            return parseFloat(timeStr) || 0;
+        }
+
+        // Función auxiliar para cargar datos de ejemplo (Laura)
+        function loadLauraKeyMomentsSafe() {
+            console.log('Intentando cargar momentos en componente:', window.keyMoments);
+            if (!window.keyMoments) return;
+
+            const moments = [
+                {
+                    tiempo: "3:01",
+                    descripcion: "⚠️ <b>Voz inestable</b> subió 56% vs su normalidad (cambio notable)"
+                },
+                {
+                    tiempo: "4:30",
+                    descripcion: "⚠️ <b>Temblor en la voz</b> subió 18% vs su normalidad (cambio notable)"
+                },
+                {
+                    tiempo: "4:47",
+                    descripcion: "⚠️ <b>Temblor en la voz</b> aumentó 33% respecto a su nivel normal"
+                },
+                {
+                    tiempo: "4:56",
+                    descripcion: "⚠️ <b>Voz inestable</b> subió 31% vs su normalidad (cambio notable)"
+                },
+                {
+                    tiempo: "5:04",
+                    descripcion: "🚨 <b>Estrés cognitivo:</b> La voz suena tensa y hay varias pausas largas"
+                }
+            ];
+
+            window.keyMoments.loadMoments(moments);
+            console.log('✅ Momentos clave (Laura) cargados EXITOSAMENTE.');
+        }
+
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+
+</html>

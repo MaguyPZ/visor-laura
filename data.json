@@ -895,6 +895,16 @@
       "origen": "GPT4",
       "segundos_inicio": 15.0,
       "segundos_fin": 20.0
+    },
+    {
+      "timestamp": "1:00 - 1:05",
+      "segundos_inicio": 60,
+      "segundos_fin": 65,
+      "tipo_indicador": "PATRON_PSICOLOGICO",
+      "que_dijo": "\"y un montón de cochino.\"",
+      "analisis_integrado": "Minimización: Este comentario puede sugerir un intento de minimizar la gravedad de la situación mencionada, posiblemente para desviar la atención o reducir el impacto emocional.",
+      "nivel_importancia": "MEDIO",
+      "origen": "GPT4_PATRON"
     }
   ],
   "veredicto_final": {

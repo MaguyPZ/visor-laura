@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visor Modular - Piloto</title>
+    <title>Análisis Vocal - Laura Fabricio</title>
     <link rel="stylesheet" href="css/visor.css">
 </head>
 
@@ -18,7 +18,7 @@
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <h1>🎯 Visor Modular - Piloto</h1>
+            <h1>🎯 Análisis Vocal - Laura Fabricio</h1>
             <p>Arquitectura basada en componentes | Cada indicador es independiente</p>
         </div>
 
@@ -27,7 +27,8 @@
             <main class="main-content">
                 <!-- Video with Overlay Indicators -->
                 <div class="video-overlay-wrapper">
-                    <video id="mainVideo" controls>
+                    <video id="mainVideo" controls
+                        src="https://res.cloudinary.com/dqeqpzghy/video/upload/v1769530683/Laura_Fabricio_lmaqe9.mp4">
                         <source src="data/Laura Fernandez espionaje micrófono oculto en un tomacorriente.mp4"
                             type="video/mp4">
                         Tu navegador no soporta video HTML5.
@@ -228,7 +229,110 @@
                 console.log('🎬 Video conectado para sincronización');
             }
 
-            showStatus('✅ Visor inicializado. Carga un archivo VISOR.json y reproduce el video.');
+            showStatus('✅ Visor inicializado. Cargando datos automáticamente...');
+
+            // AUTO-LOAD: Cargar data.json embebido
+            fetch('data.json')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('✅ Datos cargados automáticamente');
+                    visorData = data;
+                    loadVisorData(data);
+                })
+                .catch(err => {
+                    console.error('❌ Error cargando data.json:', err);
+                    showStatus('⚠️ Error cargando datos. Carga manualmente.');
+                });
+        }
+
+        // Función para cargar datos del visor
+        function loadVisorData(data) {
+            visorData = data;
+
+            const dataPoints = data.data_points_granulares || data.granular_data || data.data_points || [];
+
+            if (dataPoints.length === 0) {
+                showStatus('❌ No se encontraron datos en el JSON');
+                return;
+            }
+
+            showStatus(`✅ Cargado: ${dataPoints.length} puntos de datos`);
+
+            // Cargar Timeline Visual
+            const totalDuration = data.metadata?.duracion_total_s || 0;
+            if (window.timelineVisual) {
+                window.timelineVisual.loadData(data.timeline, totalDuration);
+            }
+
+            // Cargar momentos críticos
+            if (data.momentos_criticos) {
+                const processedMoments = data.momentos_criticos.map(m => {
+                    if (m.segundos_inicio !== undefined) return m;
+                    let start = 0, end = 0;
+                    if (typeof m.timestamp === 'string' && m.timestamp.includes('-')) {
+                        const parts = m.timestamp.split('-');
+                        start = parseTimeToSeconds(parts[0].trim());
+                        end = parseTimeToSeconds(parts[1].trim());
+                    }
+                    return { ...m, segundos_inicio: start, segundos_fin: end };
+                });
+
+                redFlag.loadCriticalMoments(processedMoments);
+
+                // Patrones Psicológicos
+                const psychPatterns = data.momentos_criticos
+                    .filter(m => m.tipo_indicador === 'PATRON_PSICOLOGICO')
+                    .map(m => ({
+                        timestamp: m.timestamp,
+                        descripcion: m.analisis_integrado || m.que_dijo,
+                        analisis_integrado: m.analisis_integrado
+                    }));
+
+                if (window.psychologicalImpact && psychPatterns.length > 0) {
+                    window.psychologicalImpact.loadPatterns(psychPatterns);
+                }
+
+                // Momentos Técnicos
+                if (window.keyMoments) {
+                    const technicalMoments = data.momentos_criticos
+                        .filter(m => m.tipo_indicador !== 'PATRON_PSICOLOGICO')
+                        .map(m => {
+                            let desc = m.analisis_integrado || m.que_dijo || "Análisis no disponible";
+                            if (desc.includes('inestable')) desc = "⚠️ <b>Voz inestable</b> " + desc.replace('voz inestable', '');
+                            else if (desc.includes('temblor')) desc = "⚠️ <b>Temblor en la voz</b> " + desc.replace('temblor en la voz', '');
+                            else if (desc.includes('tensa')) desc = "🚨 <b>Estrés cognitivo:</b> " + desc;
+                            else if (m.nivel_importancia === 'ALTO') desc = "🚨 " + desc;
+                            else desc = "ℹ️ " + desc;
+                            return { tiempo: m.timestamp, descripcion: desc };
+                        });
+                    window.keyMoments.loadMoments(technicalMoments);
+                }
+            }
+
+            // Cargar veredicto
+            if (data.veredicto_final) {
+                patternBadge.loadVeredicto(data.veredicto_final);
+                setTimeout(() => patternBadge.show(), 2000);
+                veredictoPanel.loadVeredicto(data.veredicto_final, data.conclusion_profesional);
+            }
+
+            // Cargar stress chart
+            if (dataPoints.length > 0) {
+                stressChart.loadData(dataPoints, data.momentos_criticos || []);
+            }
+
+            // Cargar contradicciones y micro-pausas
+            contradicciones.loadContradicciones(data.contradicciones_detectadas);
+            microPausas.loadMicroPausas(data.micro_pausas, data.timeline);
+
+            // Cargar jitter/shimmer chart
+            const dataWithShimmer = dataPoints.map(p => ({
+                ...p,
+                shimmer: p.shimmer || p.p * 1.5
+            }));
+            jitterShimmerChart.loadData(dataWithShimmer, data.momentos_criticos || []);
+
+            showStatus('✅ Datos cargados. Dale Play al video.');
         }
 
         // Cargar archivo de video/audio

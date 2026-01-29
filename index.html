@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Análisis Vocal - Laura Fabricio</title>
+    <title>Visor Modular - Piloto</title>
     <link rel="stylesheet" href="css/visor.css">
 </head>
 
@@ -18,7 +18,7 @@
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <h1>🎯 Análisis Vocal Forense - Laura Fabricio</h1>
+            <h1>🎯 Visor Modular - Piloto</h1>
             <p>Arquitectura basada en componentes | Cada indicador es independiente</p>
         </div>
 
@@ -28,8 +28,7 @@
                 <!-- Video with Overlay Indicators -->
                 <div class="video-overlay-wrapper">
                     <video id="mainVideo" controls>
-                        <source
-                            src="https://res.cloudinary.com/dqeqpzghy/video/upload/v1769561917/Laura_Fabricio_ed1vn2.mp4"
+                        <source src="data/Laura Fernandez espionaje micrófono oculto en un tomacorriente.mp4"
                             type="video/mp4">
                         Tu navegador no soporta video HTML5.
                     </video>
@@ -229,75 +228,7 @@
                 console.log('🎬 Video conectado para sincronización');
             }
 
-            showStatus('✅ Visor inicializado. Cargando datos automáticamente...');
-
-            // AUTO-LOAD: Cargar data.json embebido
-            fetch('data.json')
-                .then(response => response.json())
-                .then(data => {
-                    console.log('✅ Datos cargados automáticamente');
-                    visorData = data;
-                    loadVisorData(data);
-                })
-                .catch(err => {
-                    console.log('ℹ️ No hay data.json embebido, esperando carga manual');
-                    showStatus('✅ Visor listo. Carga un VISOR.json o reproduce el video.');
-                });
-        }
-
-        // Función para cargar datos del visor
-        function loadVisorData(data) {
-            visorData = data;
-            const dataPoints = data.data_points_granulares || [];
-            if (dataPoints.length === 0) return;
-
-            showStatus(`✅ Cargado: ${dataPoints.length} puntos de datos`);
-
-            // Cargar Timeline Visual
-            const totalDuration = data.metadata?.duracion_total_s || 0;
-            if (window.timelineVisual) {
-                window.timelineVisual.loadData(data.timeline, totalDuration);
-            }
-
-            // Cargar momentos críticos
-            if (data.momentos_criticos) {
-                const processedMoments = data.momentos_criticos.map(m => {
-                    if (m.segundos_inicio !== undefined) return m;
-                    let start = 0, end = 0;
-                    if (typeof m.timestamp === 'string' && m.timestamp.includes('-')) {
-                        const parts = m.timestamp.split('-');
-                        start = parseTimeToSeconds(parts[0].trim());
-                        end = parseTimeToSeconds(parts[1].trim());
-                    }
-                    return { ...m, segundos_inicio: start, segundos_fin: end };
-                });
-                redFlag.loadCriticalMoments(processedMoments);
-
-                if (window.keyMoments) {
-                    const technicalMoments = data.momentos_criticos
-                        .filter(m => m.tipo_indicador !== 'PATRON_PSICOLOGICO')
-                        .map(m => ({
-                            tiempo: m.timestamp,
-                            descripcion: m.analisis_integrado || m.que_dijo || "Análisis no disponible"
-                        }));
-                    window.keyMoments.loadMoments(technicalMoments);
-                }
-            }
-
-            // Cargar charts
-            stressChart.loadData(dataPoints, data.momentos_criticos || []);
-            jitterShimmerChart.loadData(dataPoints, data.momentos_criticos || []);
-
-            // Cargar veredicto
-            if (data.veredicto_final) {
-                patternBadge.loadVeredicto(data.veredicto_final);
-                veredictoPanel.loadVeredicto(data.veredicto_final, data.conclusion_profesional);
-            }
-
-            // Cargar contradicciones
-            contradicciones.loadContradicciones(data.contradicciones_detectadas);
-
-            showStatus('✅ Datos cargados. Reproduce el video.');
+            showStatus('✅ Visor inicializado. Carga un archivo VISOR.json y reproduce el video.');
         }
 
         // Cargar archivo de video/audio
@@ -525,6 +456,11 @@
             stressIndicator.update({ stress: closestPoint.e || 0 });
             emotionIndicator.update({ emotion: closestPoint.em || 0 });
             hnrIndicator.update({ hnr: closestPoint.hnr || 0 });
+
+            // Actualizar speaker activo
+            if (speakerIndicator && closestPoint.s) {
+                speakerIndicator.update({ speaker: closestPoint.s });
+            }
 
             // Actualizar time display
             timeDisplay.update({ time: currentTime });
